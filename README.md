@@ -1,2 +1,137 @@
-# Deep-Learning
-Deep-Learning Models
+# VeggieVision — Vegetable Image Classification
+
+A complete, end-to-end vegetable image classifier: a from-scratch CNN trained
+on the [Vegetable Image Dataset](https://www.kaggle.com/datasets/misrakahmed/vegetable-image-dataset)
+served through a professional Streamlit web app.
+
+| | |
+|---|---|
+| **Classes** | 15 (Bean, Bitter_Gourd, Bottle_Gourd, Brinjal, Broccoli, Cabbage, Capsicum, Carrot, Cauliflower, Cucumber, Papaya, Potato, Pumpkin, Radish, Tomato) |
+| **Images** | 21,000 RGB (15,000 train / 3,000 validation / 3,000 test) |
+| **Model** | From-scratch VGG-style CNN — **98.4% test accuracy** |
+| **Input** | 150 × 150 × 3 raw pixels (no normalization; BN learns the scale) |
+
+## Project structure
+
+```
+.
+├── app/
+│   └── app.py              # single-page Streamlit UI (drop-zone → classify)
+├── src/
+│   ├── config.py           # central paths & constants
+│   ├── data.py             # dataset scanning helpers
+│   ├── download_data.py    # Kaggle download + normalization into data/
+│   ├── models.py           # CNN definition (VGG-style, 150×150)
+│   ├── predict.py          # single-image inference (also a CLI)
+│   └── evaluate.py         # test-set evaluation -> reports/
+├── models/
+│   ├── vegetable_cnn.h5    # trained model
+│   └── class_names.json    # class ordering (alphabetical, Keras order)
+├── notebooks/
+│   ├── 01_eda.ipynb                # exploratory data analysis      (executed)
+│   ├── 02_preprocessing.ipynb      # tf.data pipelines + augmentation (executed)
+│   ├── 03_model_architecture.ipynb # model definition + sanity check  (executed)
+│   ├── 04_train_on_kaggle.ipynb    # end-to-end training (run on Kaggle)
+│   └── 05_evaluate.ipynb           # evaluation of the shipped model  (executed)
+├── reports/
+│   ├── figures/            # generated plots (EDA, augmentation, metrics)
+│   └── metrics/            # CSV/JSON evaluation matrices
+├── assets/
+│   ├── images (1).jpeg     # market background photo (used by the app)
+│   └── samples/            # demo images (capsicum / potato) for quick demos
+├── data/                   # train / validation / test  (gitignored, see below)
+├── requirements.txt
+└── .gitignore              # ignores venv, data/, caches
+```
+
+> **Note on `data/`:** the 15k/3k/3k splits are large and regenerable, so they
+> are gitignored. Restore/sync them with `python -m src.download_data`, or keep
+> an unpacked copy in `data/` yourself — `src/predict.py` and `app/` do **not**
+> require the dataset to serve predictions.
+```
+
+## Quickstart
+
+```bash
+# 1. Environment
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+# 2. (Optional) Download the dataset — requires Kaggle credentials
+.venv/bin/python -m src.download_data
+
+# 3. Evaluate the shipped model on the test set -> writes reports/
+.venv/bin/python -m src.evaluate
+
+# 4. Launch the app
+streamlit run app/app.py
+```
+
+Open the printed URL (default `http://localhost:8501`). Drag & drop (or click
+to upload) a vegetable photo into the 200×200 drop-zone, hit **Classify**, and
+read the predicted class and confidence. The class and confidence always come
+from the trained model in `models/` — there is no random/stub fallback. If the
+model can't be loaded the app tells you why instead of guessing. Evaluation
+figures and CSV matrices from step 3 stay available under `reports/`.
+
+### Prediction from the CLI
+
+```bash
+.venv/bin/python -m src.predict path/to/image.jpg
+```
+
+```
+Prediction: Tomato
+Confidence: 99.21%
+```
+
+## Notebooks
+
+Run the pipeline notebooks (they are already executed and contain outputs):
+
+```bash
+jupyter nbconvert --to notebook --execute --inplace notebooks/0{1,2,3,5}_*.ipynb
+```
+
+- `01_eda` — dataset stats, class distribution, sample images, image dimensions.
+- `02_preprocessing` — `tf.data` pipelines: resize to 150×150, geometric
+  augmentation (train only), no pixel normalization (the model expects
+  `[0, 255]`).
+- `03_model_architecture` — the VGG-style CNN and its parameter accounting.
+- `04_train_on_kaggle` — self-contained training notebook. Upload it to Kaggle
+  (GPU optional), add the Vegetable Image Dataset input, run all cells. The best
+  model, class names and report files land in `/kaggle/working/`.
+- `05_evaluate` — re-runs `src.evaluate.py` and renders the report outputs.
+
+## Model
+
+VGG-style CNN (`src/models.py`), trained from scratch with Adam + categorical
+cross-entropy:
+
+| Block | Layers | Output |
+|---|---|---|
+| 1 | Conv5×5/32 → Conv5×5/32 → BatchNorm → MaxPool → Dropout 25% | 71 × 71 |
+| 2 | Conv3×3/64 → Conv3×3/64 → BatchNorm → MaxPool → Dropout 25% | 33 × 33 |
+| Head | Flatten → Dense 256 (ReLU) → Dropout 50% → Dense 15 (softmax) | 15 |
+
+- **17.9M** parameters · early stopping + ReduceLROnPlateau
+- Test set: **loss 0.076 · accuracy 98.43%** (47/3,000 misclassified)
+
+## Reports
+
+Evaluation outputs (confusion matrix, per-class report, training-friendly
+figures) are regenerated by `src/evaluate.py` or `05_evaluate.ipynb` into:
+
+```
+reports/
+├── figures/  confusion_matrix.png · per_class_accuracy.png ·
+│             sample_predictions.png · misclassified_samples.png · EDA plots
+└── metrics/  test_metrics.json · classification_report.csv ·
+              confusion_matrix.csv · per_class_accuracy.csv
+```
+
+## Retraining / re-exporting the model
+
+The app loads `models/vegetable_cnn.h5`. After a Kaggle run, download
+`vegetable_cnn.h5` and `class_names.json` from `/kaggle/working/` into
+`models/`. The `.h5` uses standard Keras layers, so no `custom_objects` are
+needed.

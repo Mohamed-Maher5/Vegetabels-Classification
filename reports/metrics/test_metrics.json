@@ -1,0 +1,13 @@
+{
+  "test_loss": 0.07563842087984085,
+  "test_accuracy": 0.984333336353302,
+  "manual_accuracy": 0.9843333333333333,
+  "n_samples": 3000,
+  "misclassified": 47,
+  "misclassification_rate": 0.015666666666666666,
+  "input_size": [
+    150,
+    150
+  ],
+  "num_classes": 15
+}

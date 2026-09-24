@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/
+
+# Large / regenerable data (re-download via `python -m src.download_data`)
+data/
+data/raw/
+
+# Trained model artifacts (too large for git — re-export from the Kaggle
+# training notebook into models/, see README "Retraining / re-exporting")
+models/*.h5
+models/*.keras
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

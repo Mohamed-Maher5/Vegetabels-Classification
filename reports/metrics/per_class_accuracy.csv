@@ -1,0 +1,16 @@
+class,accuracy,correct,total
+Bean,0.985,197,200
+Bitter_Gourd,0.99,198,200
+Bottle_Gourd,0.995,199,200
+Brinjal,0.995,199,200
+Broccoli,0.975,195,200
+Cabbage,0.97,194,200
+Capsicum,0.99,198,200
+Carrot,1.0,200,200
+Cauliflower,0.965,193,200
+Cucumber,1.0,200,200
+Papaya,0.965,193,200
+Potato,1.0,200,200
+Pumpkin,0.97,194,200
+Radish,1.0,200,200
+Tomato,0.965,193,200
